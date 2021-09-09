@@ -1,5 +1,5 @@
 import { KeyboardStyle } from '@capacitor/keyboard';
-import { IonContent, IonPage, useIonViewWillEnter, IonGrid, IonRow, IonCol } from '@ionic/react';
+import { IonContent, IonPage, isPlatform, useIonViewWillEnter, IonGrid, IonRow, IonCol, IonButton } from '@ionic/react';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -24,6 +24,16 @@ const Homescreen: React.FC = () => {
   const appInit = useSelector((state: any) => state.app.appInit);
   const dispatch = useDispatch();
 
+
+  const goToWallet = (withMnemonic?: any) => {
+    setIsWrongPin(null);
+    setNeedReset(true);
+    setLoading(false);
+    // setIsAuth will cause redirect to /wallet
+    // Restore state
+    dispatch(signIn(withMnemonic));
+  }
+
   const onConfirmPinModal = (pin: string) => {
     getIdentity(pin)
       .then((mnemonic) => {
@@ -31,12 +41,7 @@ const Homescreen: React.FC = () => {
         setLoading(true);
         setIsWrongPin(false);
         setTimeout(() => {
-          setIsWrongPin(null);
-          setNeedReset(true);
-          setLoading(false);
-          // setIsAuth will cause redirect to /wallet
-          // Restore state
-          dispatch(signIn(mnemonic));
+          goToWallet(mnemonic);
         }, PIN_TIMEOUT_SUCCESS);
       })
       .catch((e) => {
@@ -52,17 +57,43 @@ const Homescreen: React.FC = () => {
   };
 
   useIonViewWillEnter(() => {
-    const init = async () => {
-      setLoading(true);
-      if (!appInit) dispatch(initApp());
-      await setKeyboardTheme(KeyboardStyle.Dark);
-      const mnemonicExists = await mnemonicInSecureStorage();
-      if (mnemonicExists) setPinModalIsOpen(true);
-    };
-    init()
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    if (isPlatform("desktop")) {
+      if (typeof (window as any).marina === 'undefined')
+        return;
+
+      const onConnect = async () => {
+        await (window as any).marina.on('ENABLED', () => goToWallet());
+      }
+
+      onConnect()
+        .catch(console.error)
+        .finally(() => setLoading(false));
+
+
+    } else {
+      const init = async () => {
+        setLoading(true);
+        if (!appInit) dispatch(initApp());
+        await setKeyboardTheme(KeyboardStyle.Dark);
+        const mnemonicExists = await mnemonicInSecureStorage();
+        if (mnemonicExists) setPinModalIsOpen(true);
+      };
+      init()
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    }
+
+
   });
+
+  const connectWithMarina = async (evt: any) => {
+    evt.preventDefault();
+
+    if (typeof (window as any).marina === 'undefined')
+      return;
+
+    await (window as any).marina.enable()
+  }
 
   return (
     <IonPage id="homescreen">
@@ -79,20 +110,27 @@ const Homescreen: React.FC = () => {
         setIsWrongPin={setIsWrongPin}
       />
       <IonContent>
-        <IonGrid className="ion-text-center ion-justify-content-evenly">
+        <IonGrid className="ion-text-center ion-justify-content-evenly" fixed>
           <IonRow className="img-container">
             <IonCol size="8" offset="2" sizeMd="6" offsetMd="3">
               <img src={logo} alt="tdex logo" />
             </IonCol>
           </IonRow>
-
-          <ButtonsMainSub
-            mainTitle="SETUP WALLET"
-            mainLink="/onboarding/backup"
-            subTitle="RESTORE WALLET"
-            subLink="/restore"
-            className="btn-container"
-          />
+          {isPlatform("desktop") ?
+            <IonButton
+              className="main-button"
+              data-cy="main-button"
+              onClick={connectWithMarina}
+            >
+              CONNECT WITH MARINA
+            </IonButton> :
+            <ButtonsMainSub
+              mainTitle="SETUP WALLET"
+              mainLink="/onboarding/backup"
+              subTitle="RESTORE WALLET"
+              subLink="/restore"
+              className="btn-container"
+            />}
         </IonGrid>
       </IonContent>
     </IonPage>

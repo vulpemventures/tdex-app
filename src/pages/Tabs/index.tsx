@@ -1,4 +1,4 @@
-import { IonPage, IonContent, IonTabs, IonTabBar, IonTabButton, IonRouterOutlet } from '@ionic/react';
+import { IonPage, IonContent, IonTabs, IonTabBar, IonTabButton, IonRouterOutlet, isPlatform } from '@ionic/react';
 import classNames from 'classnames';
 import React from 'react';
 import type { RouteComponentProps } from 'react-router';
@@ -23,6 +23,9 @@ const Tabs: React.FC<RouteComponentProps> = ({ history, location }) => {
     return false;
   };
 
+  const slot = isPlatform('desktop') ? 'top' : 'bottom';
+
+
   return (
     <IonPage>
       <IonContent>
@@ -37,7 +40,7 @@ const Tabs: React.FC<RouteComponentProps> = ({ history, location }) => {
             <Redirect exact from="/restore" to="/wallet" />
             <Redirect exact from="/onboarding/pin-setting" to="/wallet" />
           </IonRouterOutlet>
-          <IonTabBar slot="bottom">
+          <IonTabBar slot={slot}>
             {TABS.map((item, index) => (
               <IonTabButton data-cy={`tab-${item.name}`} selected={isActive(item.name)} tab={item.path} key={index}>
                 <div className="tab-content" onClick={() => history.push(item.path)}>

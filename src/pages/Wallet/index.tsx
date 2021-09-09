@@ -10,6 +10,7 @@ import {
   IonRow,
   IonCol,
   IonSpinner,
+  isPlatform,
 } from '@ionic/react';
 import { addCircleOutline } from 'ionicons/icons';
 import React, { useEffect, useState } from 'react';
@@ -113,7 +114,7 @@ const Wallet: React.FC<WalletProps> = ({
     <IonPage>
       <IonContent className="wallet-content">
         <Refresher />
-        <IonGrid>
+        <IonGrid fixed>
           <Header
             title="Wallet"
             hasCloseButton={true}
@@ -121,7 +122,7 @@ const Wallet: React.FC<WalletProps> = ({
             isTitleLarge={true}
             customRightButton={isFetchingUtxos ? <IonSpinner name="lines-small" /> : <></>}
           />
-          <IonRow className="ion-margin-vertical ion-justify-content-center">
+          {!isPlatform('desktop') && <IonRow className="ion-margin-vertical ion-justify-content-center">
             <CircleTotalBalance
               totalBalance={
                 totalLBTC.amount ? fromSatoshiFixed(totalLBTC.amount.toString(), 8, undefined, lbtcUnit) : '0.00'
@@ -130,12 +131,12 @@ const Wallet: React.FC<WalletProps> = ({
               fiatBalance={
                 totalLBTC && prices[LBTC_COINGECKOID]
                   ? `${fromSatoshi(totalLBTC.amount.toString())
-                      .mul(prices[LBTC_COINGECKOID])
-                      .toFixed(2)} ${currency.toUpperCase()}`
+                    .mul(prices[LBTC_COINGECKOID])
+                    .toFixed(2)} ${currency.toUpperCase()}`
                   : `0.00 ${currency.toUpperCase()}`
               }
             />
-          </IonRow>
+          </IonRow>}
 
           <IonList scroll-y={true}>
             <IonListHeader className="ion-no-margin">
